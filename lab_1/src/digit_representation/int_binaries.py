@@ -22,22 +22,42 @@ class BinaryConverter:
             if sing == -1
             else binary[1:]
         )
-        return sing * BinaryConverter._to_decimal(strip_number)
+        return sing * BinaryConverter.to_decimal(strip_number)
 
     @staticmethod
     def convert_sign_magnitude(binary: str) -> int:
         if not all(bit in "01" for bit in binary):
             raise ValueError("Binary string must contain only '0' and '1'")
         sing = -1 if binary[0] == "1" else 1
-        return sing * BinaryConverter._to_decimal(binary[1:])
+        return sing * BinaryConverter.to_decimal(binary[1:])
 
     @staticmethod
     def conver_with_fixed_point(binary: str) -> float:
         sign = -1 if binary[0] == "1" else 1
         abs_binary = binary[1:].split(".")
-        int_part, float_part
+        int_part, float_part = abs_binary[0], abs_binary[1]
         if abs_binary[0]:
-            pass
+            int_part = str(BinaryConverter.to_decimal(int_part))
+        else:
+            int_part = "0"
+        float_part_result = 0
+        for i, digit in enumerate(float_part):
+            float_part_result += 2 ** (-(i + 1)) * int(digit)
+        return (float(int_part) + float_part_result) * sign
+
+    @staticmethod
+    def convert_ieee(sign: str, exponenta: str, mantissa: str) -> float:
+        if int(sign + exponenta + mantissa) == 0:
+            return float(0)
+        exponenta_int = BinaryConverter.to_decimal(exponenta) - 127
+        result = ""
+        if exponenta_int >= 0:
+            result = (
+                sign + "1" + mantissa[:exponenta_int] + "." + mantissa[exponenta_int:]
+            )
+        else:
+            result = sign + "0." + "0" * (-exponenta_int - 1) + "1" + mantissa
+        return BinaryConverter.conver_with_fixed_point(result)
 
 
 class BinaryInt:
@@ -254,7 +274,7 @@ class BinaryFloatFixed:
         decimal_float_abs = abs(self.decimal_float)
 
         int_part = int(decimal_float_abs)
-        fractional_part = str(decimal_float_abs)
+        fractional_part = str(decimal_float_abs - int_part)
         fractional_part = float("0" + fractional_part[fractional_part.find(".") :])
 
         int_part_str = BinaryInt._get_binary_simple(int_part)
@@ -276,6 +296,7 @@ class BinaryFloatFixed:
     def __str__(self):
         return (
             f"\nDecimal representation: {self.decimal_float}\n"
+            f"Decimal representation (after converting): {BinaryConverter.conver_with_fixed_point(self.binary_float)}\n"
             f"Binary representation (with fixed point): {self.binary_float}\n"
         )
 
@@ -289,6 +310,12 @@ class BinaryFloatIEEE:
         self.sign, self.exponenta, self.mantissa = self._get_ieee_number()
 
     def _get_ieee_number(self):
+        if self.number.decimal_float == 0:
+            return (
+                "0",
+                "0" * BinaryFloatIEEE.EXPONENTA_LENGTH,
+                "0" * BinaryFloatIEEE.MANTISSA_LENGTH,
+            )
         number = self.number.binary_float
         sign = number[0]
         point_index = number.find(".")
@@ -300,8 +327,8 @@ class BinaryFloatIEEE:
             mantissa = number[0][1:] + number[1]
             exponenta = len(mantissa) - len(number[1])
         else:
-            mantissa = number[1][number.find("1") + 1 :]
-            exponenta = len(number[1]) - len(mantissa)
+            mantissa = number[1][number[1].find("1") + 1 :]
+            exponenta = len(mantissa) - len(number[1])
 
         exponenta = BinaryInt._get_binary_simple(exponenta + 127).zfill(
             BinaryFloatIEEE.EXPONENTA_LENGTH
@@ -309,22 +336,26 @@ class BinaryFloatIEEE:
         mantissa = mantissa.ljust(BinaryFloatIEEE.MANTISSA_LENGTH, "0")[:23]
         return (sign, exponenta, mantissa)
 
+    def __add__(self, other: "BinaryFloatIEEE") -> "BinaryFloatIEEE":
+        pass
+
     def __str__(self):
         return (
             f"\nDecimal representation: {self.number.decimal_float}\n"
+            f"Decimal representation (after converting): {BinaryConverter.convert_ieee(self.sign, self.exponenta, self.mantissa)}\n"
             f"Binary representation (IEEE-754): {self.sign}_{self.exponenta}_{self.mantissa}\n"
         )
 
 
-rand_float_bin = BinaryFloatFixed(1234.56, precision=23)
+rand_float_bin = BinaryFloatFixed(0, precision=32)
 print(rand_float_bin)
 first_ieee = BinaryFloatIEEE(rand_float_bin)
 print(first_ieee)
 
-# rand_binary1 = BinaryInt(0)
-# rand_binary2 = BinaryInt(0, bits_number=23)
-# print(rand_binary1, rand_binary2, sep="")
-# print(rand_binary1 - rand_binary2)
-# print(rand_binary1 * rand_binary2)
-# binary_with_fixed_point = rand_binary1 / rand_binary2
-# print(binary_with_fixed_point)
+rand_binary1 = BinaryInt(1)
+rand_binary2 = BinaryInt(3, bits_number=23)
+print(rand_binary1, rand_binary2, sep="")
+print(rand_binary1 - rand_binary2)
+print(rand_binary1 * rand_binary2)
+binary_with_fixed_point = rand_binary1 / rand_binary2
+print(binary_with_fixed_point)
