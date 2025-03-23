@@ -64,7 +64,7 @@ class BinaryInt:
     def __init__(self, decimal: int, *, bits_number: int = 8):
         assert (
             -(2 ** (bits_number - 1) - 1) <= decimal <= 2 ** (bits_number - 1) - 1
-        ), f"Your number {decimal} is not in  [-(2^({bits_number} - 1) - 1); 2^({bits_number} - 1) - 1]"
+        ), f"Your number {decimal} is not in  [-(2^({bits_number} - 1) - 1); 2^({bits_number} - 1) - 1]\n"
 
         self.bits_number = bits_number
         self.decimal = decimal
@@ -127,7 +127,6 @@ class BinaryInt:
             result = "1" + result
         return result
 
-    # Доработать add (иногда выдает неверные результаты)
     def __add__(self, other: "BinaryInt") -> "BinaryInt":
         first_summand, second_summand = self.twos_complement, other.twos_complement
         if self.bits_number > other.bits_number and other.decimal < 0:
@@ -186,7 +185,7 @@ class BinaryInt:
 
     def __truediv__(self, other: "BinaryInt") -> "BinaryFloatFixed":
         if other.decimal == 0:
-            raise Exception("We can't devide on 0")
+            raise ZeroDivisionError("We can't devide on 0\n")
         if self.decimal == 0:
             return BinaryFloatFixed.create_from_str(
                 "0.0", (self.decimal / other.decimal)
@@ -295,7 +294,7 @@ class BinaryFloatFixed:
 
     def __str__(self):
         return (
-            f"\nDecimal representation: {self.decimal_float}\n"
+            f"\nDecimal representation (before converting): {self.decimal_float}\n"
             f"Decimal representation (after converting): {BinaryConverter.conver_with_fixed_point(self.binary_float)}\n"
             f"Binary representation (with fixed point): {self.binary_float}\n"
         )
@@ -305,20 +304,35 @@ class BinaryFloatIEEE:
     EXPONENTA_LENGTH = 8
     MANTISSA_LENGTH = 23
 
-    def __init__(self, number: BinaryFloatFixed):
-        self.number = number
-        self.sign, self.exponenta, self.mantissa = self._get_ieee_number()
+    def __init__(
+        self,
+        bin_float_point: BinaryFloatFixed = None,
+        sign: str = "",
+        exponenta: str = "",
+        mantissa: str = "",
+    ):
+        if sign + exponenta + mantissa:
+            self.sign = sign
+            self.exponenta = exponenta
+            self.mantissa = mantissa
+        else:
+            self.sign, self.exponenta, self.mantissa = self._get_ieee_number(
+                bin_float_point
+            )
 
-    def _get_ieee_number(self):
-        if self.number.decimal_float == 0:
+    @classmethod
+    def create_from_sem(cls, sign: str, exponenta: str, mantissa: str):
+        return BinaryFloatIEEE(sign=sign, exponenta=exponenta, mantissa=mantissa)
+
+    def _get_ieee_number(self, number_fixed_point):
+        if number_fixed_point.decimal_float == 0:
             return (
                 "0",
                 "0" * BinaryFloatIEEE.EXPONENTA_LENGTH,
                 "0" * BinaryFloatIEEE.MANTISSA_LENGTH,
             )
-        number = self.number.binary_float
+        number = number_fixed_point.binary_float
         sign = number[0]
-        point_index = number.find(".")
         number = number[1:].split(".")
 
         exponenta = 0
@@ -337,25 +351,74 @@ class BinaryFloatIEEE:
         return (sign, exponenta, mantissa)
 
     def __add__(self, other: "BinaryFloatIEEE") -> "BinaryFloatIEEE":
-        pass
+        if self.sign != other.sign:
+            raise Exception(
+                "Unfortunately this program can't add numbers with different sign yet\n"
+            )
+        result_sign = self.sign
+
+        result_exponenta = max(self.exponenta, other.exponenta)
+        if self.exponenta == other.exponenta:
+            result_mantissa = BinaryInt._binary_sum(
+                other.mantissa,
+                self.mantissa,
+                bits_number=BinaryFloatIEEE.MANTISSA_LENGTH,
+            )
+            result_exponenta = BinaryInt._get_binary_simple(
+                BinaryConverter.to_decimal(result_exponenta) + 1
+            ).zfill(BinaryFloatIEEE.EXPONENTA_LENGTH)
+            if len(result_mantissa) > BinaryFloatIEEE.MANTISSA_LENGTH:
+                result_mantissa = (result_mantissa)[:23]
+            else:
+                result_mantissa = ("0" + result_mantissa)[:23]
+        else:
+            exp_dif = abs(
+                BinaryConverter.to_decimal((self.exponenta))
+                - BinaryConverter.to_decimal(other.exponenta)
+            )
+            if self.exponenta > other.exponenta:
+                edited_mantissa = ("0" * (exp_dif - 1) + "1" + other.mantissa)[
+                    : BinaryFloatIEEE.MANTISSA_LENGTH
+                ]
+                result_mantissa = BinaryInt._binary_sum(
+                    self.mantissa,
+                    edited_mantissa,
+                    bits_number=BinaryFloatIEEE.MANTISSA_LENGTH,
+                )
+            else:
+                edited_mantissa = ("0" * (exp_dif - 1) + "1" + self.mantissa)[
+                    : BinaryFloatIEEE.MANTISSA_LENGTH
+                ]
+                result_mantissa = BinaryInt._binary_sum(
+                    other.mantissa,
+                    edited_mantissa,
+                    bits_number=BinaryFloatIEEE.MANTISSA_LENGTH,
+                )
+            if len(result_mantissa) > BinaryFloatIEEE.MANTISSA_LENGTH:
+                result_exponenta = BinaryInt._get_binary_simple(
+                    BinaryConverter.to_decimal(result_exponenta) + 1
+                ).zfill(BinaryFloatIEEE.EXPONENTA_LENGTH)
+                result_mantissa = ("0" + result_mantissa[1:])[:23]
+
+        return BinaryFloatIEEE.create_from_sem(
+            result_sign, result_exponenta, result_mantissa
+        )
 
     def __str__(self):
         return (
-            f"\nDecimal representation: {self.number.decimal_float}\n"
             f"Decimal representation (after converting): {BinaryConverter.convert_ieee(self.sign, self.exponenta, self.mantissa)}\n"
             f"Binary representation (IEEE-754): {self.sign}_{self.exponenta}_{self.mantissa}\n"
         )
 
 
-rand_float_bin = BinaryFloatFixed(0, precision=32)
-print(rand_float_bin)
-first_ieee = BinaryFloatIEEE(rand_float_bin)
-print(first_ieee)
+# rand_float_bin_1 = BinaryFloatFixed(-11, precision=32)
+# print(rand_float_bin_1)
+# rand_float_bin_2 = BinaryFloatFixed(-11, precision=32)
+# print(rand_float_bin_2)
+# first_ieee = BinaryFloatIEEE(rand_float_bin_1)
+# print(first_ieee)
+# second_ieee = BinaryFloatIEEE(rand_float_bin_2)
+# print(second_ieee)
 
-rand_binary1 = BinaryInt(1)
-rand_binary2 = BinaryInt(3, bits_number=23)
-print(rand_binary1, rand_binary2, sep="")
-print(rand_binary1 - rand_binary2)
-print(rand_binary1 * rand_binary2)
-binary_with_fixed_point = rand_binary1 / rand_binary2
-print(binary_with_fixed_point)
+# result_ieee = first_ieee + second_ieee
+# print(result_ieee)
