@@ -104,7 +104,6 @@ class BinaryInt:
             )
 
     def _get_twos_complement(self) -> str:
-        pass
         if self.decimal >= 0:
             return "0" + self._get_binary()
         else:
@@ -142,8 +141,12 @@ class BinaryInt:
         result_bits_numer = max(len(first_summand), len(second_summand))
         result_str = BinaryInt._binary_sum(
             first_summand, second_summand, bits_number=result_bits_numer
-        )[-result_bits_numer:]
-        result_int = BinaryConverter.convert_twos_complement(result_str)
+        )
+        if first_summand[0] == second_summand[0] != result_str[-result_bits_numer]:
+            raise OverflowError("Oops, overflow has just happened\n")
+        result_int = BinaryConverter.convert_twos_complement(
+            result_str[-result_bits_numer:]
+        )
         return BinaryInt(result_int, bits_number=len(result_str))
 
     def __sub__(self, other: "BinaryInt") -> "BinaryInt":

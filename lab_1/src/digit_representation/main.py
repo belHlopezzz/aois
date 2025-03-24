@@ -59,6 +59,8 @@ class Menu:
                     print(f"{e}")
                 except ValueError:
                     print("Value and bits number must be a number\n")
+                except OverflowError as e:
+                    print(f"{e}")
             elif choice == 5:
                 try:
                     print()
@@ -77,6 +79,8 @@ class Menu:
                     print(f"{e}")
                 except ValueError:
                     print("Value and bits number must be a number\n")
+                except OverflowError as e:
+                    print(f"{e}")
             elif choice == 6:
                 try:
                     print()
