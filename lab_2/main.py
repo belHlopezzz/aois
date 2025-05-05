@@ -16,13 +16,17 @@ def main():
         if text.lower() == "exit":
             break
 
-        try:
-            logical_function = LogicalFunction(text)
+        # try:
+        logical_function = LogicalFunction(text)
 
-            table = TruthTable(logical_function)
-            table.display()
-        except Exception as e:
-            print(e)
+        table = TruthTable(logical_function)
+        table.display()
+        print("PCNF: ", table.get_pcnf(), end="\n\n")
+        print("PDNF: ", table.get_pdnf(), end="\n\n")
+        print("Numeric form of PCNF: ", table.get_num_form_pcnf(), end="\n\n")
+        print("Numeric form of PDNF: ", table.get_num_form_pdnf(), end="\n\n")
+        index_form = table.get_index_form()
+        print("Index form:", int(index_form, 2), " - ", index_form)
 
     print("\nExiting program.")
 
