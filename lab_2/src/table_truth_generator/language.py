@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Set, List
 
 VARIABLE, CONST, EQU, IMP, OR, AND, NOT, LPAREN, RPAREN, SPACE, EOF = (
     "VARIABLE",
@@ -37,7 +37,7 @@ class Lexer:
     def error(self):
         raise Exception("Invalid character")
     
-    def get_variables(self):
+    def get_variables(self) -> List[str]:
         return sorted(list(self.variables))
 
     def advance(self):
@@ -51,7 +51,7 @@ class Lexer:
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
 
-    def get_next_token(self):
+    def get_next_token(self) -> Token:
         # Lexical analyzer
         while self.current_char is not None:
             if self.current_char.isspace():

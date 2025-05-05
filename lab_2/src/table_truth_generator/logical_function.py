@@ -1,7 +1,7 @@
 from typing import Dict
 
-from language import Lexer
-from grammar import Parser
+from src.table_truth_generator.language import Lexer
+from src.table_truth_generator.grammar import Parser
 
 
 class LogicalFunction:

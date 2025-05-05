@@ -2,7 +2,7 @@ from typing import List
 from itertools import product
 from tabulate import tabulate
 
-from logical_function import LogicalFunction
+from src.table_truth_generator.logical_function import LogicalFunction
 
 
 class TruthTable:
@@ -44,7 +44,7 @@ class TruthTable:
         str_num_form_pdnf = map(lambda x: str(x), self.num_form_pcnf)
         return f"({", ".join(str_num_form_pdnf)}) &"
     
-    def get_index_form(self) -> tuple:
+    def get_index_form(self) -> str:
          result = ["0"] * 2 ** len(self.variables)
          for i in self.num_form_pdnf:
               result[i] = "1"

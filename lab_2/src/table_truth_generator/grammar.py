@@ -1,5 +1,6 @@
-from language import Lexer, VARIABLE, NOT, AND, OR, LPAREN, RPAREN, IMP, EQU, EOF
-from nodes import VariableNode, UnaryOperationNode, BinaryOperationNode
+from src.table_truth_generator.language import Lexer, VARIABLE, NOT, AND, OR, LPAREN, RPAREN, IMP, EQU, EOF
+from src.table_truth_generator.nodes import VariableNode, UnaryOperationNode, BinaryOperationNode, ExpressionNode
+
 
 class Parser:
     def __init__(self, lexer: Lexer):
@@ -15,7 +16,7 @@ class Parser:
         else:
             self.error()
 
-    def element(self):
+    def element(self) -> ExpressionNode:
         token = self.current_token
         if token.type == VARIABLE:
             self.eat(VARIABLE)
@@ -30,7 +31,7 @@ class Parser:
             return node
         self.error()
 
-    def conjunction(self): 
+    def conjunction(self) -> ExpressionNode:
         node = self.element()
         while self.current_token.type == AND:
             operator = self.current_token
@@ -42,7 +43,7 @@ class Parser:
             )
         return node
 
-    def disjunction(self):
+    def disjunction(self) -> ExpressionNode:
         node = self.conjunction()
         while self.current_token.type == OR:
             operator = self.current_token
@@ -54,7 +55,7 @@ class Parser:
             )
         return node
 
-    def implication(self):
+    def implication(self) -> ExpressionNode:
         node = self.disjunction()
         while self.current_token.type == IMP:
             operator = self.current_token
@@ -62,11 +63,11 @@ class Parser:
             node = BinaryOperationNode(
                 left_operand=node,
                 operator=operator,
-                right_operand=self.disjunction(), # Сейчас левая ассоциация, чтобы сделать правую: right_operand=self.implication()
+                right_operand=self.disjunction(),  # Сейчас левая ассоциация, чтобы сделать правую: right_operand=self.implication()
             )
         return node
 
-    def equivalence(self):
+    def equivalence(self) -> ExpressionNode:
         node = self.implication()
         while self.current_token.type == EQU:
             operator = self.current_token
@@ -78,7 +79,7 @@ class Parser:
             )
         return node
 
-    def parse(self):
+    def parse(self) -> ExpressionNode:
         node = self.equivalence()
         if self.current_token.type != EOF:
             self.error()
