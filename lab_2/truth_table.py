@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 from itertools import product
 from tabulate import tabulate
 
@@ -51,21 +51,17 @@ class TruthTable:
          return "".join(result)
 
     def get_pcnf(self) -> str:
-        result = ""
+        maxterms = []
         for j in self.num_form_pcnf:
-                terms = []
-                for i in range(len(self.variables)):
-                    var = self.variables[i]
-                    terms.append(f"{var}" if not self.table[j][i] else f"!{var}")
-                result += "(" + "|".join(terms) + ")&"
-        return result.rstrip("&") 
+            terms = [f"!{var}" if self.table[j][i] else var for i, var in enumerate(self.variables)]
+            maxterm = "(" + "|".join(terms) + ")"
+            maxterms.append(maxterm)
+        return "&".join(maxterms)
 
     def get_pdnf(self) -> str:
-        result = ""
+        minterms = []
         for j in self.num_form_pdnf:
-                terms = []
-                for i in range(len(self.variables)):
-                    var = self.variables[i]
-                    terms.append(f"{var}" if self.table[j][i] else f"!{var}")
-                result += "(" + "&".join(terms) + ")|"
-        return result.rstrip("|") 
+            terms = [var if self.table[j][i] else f"!{var}" for i, var in enumerate(self.variables)]
+            minterm = "(" + "&".join(terms) + ")"
+            minterms.append(minterm)
+        return "|".join(minterms)

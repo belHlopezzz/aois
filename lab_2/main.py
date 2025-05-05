@@ -1,34 +1,71 @@
+from colorama import Fore, Back, Style, init
 from logical_function import LogicalFunction
 from truth_table import TruthTable
+import time
+
 
 def main():
-    print("Logical Formula Truth Table Generator")
-    print("Operators: !, &, |, >, ~")
-    print("Variables: Single letters (a-z, A-Z)")
-    print("Example: (a & b) | !c")
-    print("Enter 'exit' to quit.")
+    # Инициализация colorama для корректной работы цветов в консоли
+    init()
+
+    # Заголовок программы
+    print(Fore.GREEN + Style.BRIGHT + "Logical Formula Truth Table Generator" + Style.RESET_ALL)
+    print(Fore.WHITE + "Operators: ! (NOT), & (AND), | (OR), > (IMP), ~ (EQU)" + Style.RESET_ALL)
+    print(Fore.WHITE + "Variables: Single letters (a-z, A-Z)" + Style.RESET_ALL)
+    print(Fore.WHITE + "Example: (a & b) | !c" + Style.RESET_ALL)
+    print(Fore.WHITE + "Enter 'exit' to quit." + Style.RESET_ALL)
+    print(Fore.WHITE + "Note: Formulas with more than 10 variables may have limited index form output." + Style.RESET_ALL)
 
     while True:
-        text = input("\nEnter formula: ")
+        # Приглашение для ввода формулы
+        text = input(Fore.YELLOW + "\nEnter formula: " + Style.RESET_ALL)
 
         if not text:
+            print(Fore.RED + "Error: Empty input. Please enter a formula." + Style.RESET_ALL)
             continue
         if text.lower() == "exit":
             break
 
-        # try:
-        logical_function = LogicalFunction(text)
+        try:
+            # Фиксация времени начала обработки
+            start_time = time.perf_counter()
 
-        table = TruthTable(logical_function)
-        table.display()
-        print("PCNF: ", table.get_pcnf(), end="\n\n")
-        print("PDNF: ", table.get_pdnf(), end="\n\n")
-        print("Numeric form of PCNF: ", table.get_num_form_pcnf(), end="\n\n")
-        print("Numeric form of PDNF: ", table.get_num_form_pdnf(), end="\n\n")
-        index_form = table.get_index_form()
-        print("Index form:", int(index_form, 2), " - ", index_form)
+            logical_function = LogicalFunction(text)
 
-    print("\nExiting program.")
+            # Проверка на количество переменных
+            if len(logical_function.variables) > 10:
+                print(Fore.YELLOW + "Warning: Formula has more than 10 variables. Index form will be shown as binary string only." + Style.RESET_ALL)
+
+            # Вывод таблицы истинности
+            print(Fore.MAGENTA + "\nTruth Table:" + Style.RESET_ALL)
+            table = TruthTable(logical_function)
+            table.display()
+
+            # Вывод PCNF и PDNF
+            print(Fore.BLUE + Style.BRIGHT + "PCNF: " + Style.RESET_ALL + table.get_pcnf())
+            print(Fore.YELLOW + Style.BRIGHT + "PDNF: " + Style.RESET_ALL + table.get_pdnf())
+
+            # Фиксация времени окончания и вывод времени выполнения
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time
+            print(Fore.CYAN + f"Processing time: {elapsed_time:.4f} seconds" + Style.RESET_ALL)
+
+            # Вывод числовых форм
+            print(Fore.GREEN + Style.BRIGHT + "Numeric form of PCNF: " + Style.RESET_ALL + table.get_num_form_pcnf())
+            print(Fore.GREEN + Style.BRIGHT + "Numeric form of PDNF: " + Style.RESET_ALL + table.get_num_form_pdnf())
+
+            # Вывод индексной формы
+            index_form = table.get_index_form()
+            if len(logical_function.variables) <= 10:
+                print(Fore.MAGENTA + Style.BRIGHT + "Index form: " + Style.RESET_ALL + f"{int(index_form, 2)} - {index_form}")
+            else:
+                print(Fore.MAGENTA + Style.BRIGHT + "Index form (binary): " + Style.RESET_ALL + index_form)
+
+        except Exception as e:
+            print(Fore.RED + f"Error: {str(e)}" + Style.RESET_ALL)
+
+    # Сообщение о завершении
+    print(Fore.CYAN + "\nExiting program." + Style.RESET_ALL)
 
 
 if __name__ == "__main__":

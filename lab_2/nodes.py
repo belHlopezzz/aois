@@ -1,12 +1,11 @@
 from abc import abstractmethod, ABC
-from typing import Dict
 
 from language import Token
 
 
 class ExpressionNode(ABC):
     @abstractmethod
-    def evaluate(self, assignment: Dict[str, bool]) -> bool:
+    def to_python(self):
         pass
 
 
@@ -14,20 +13,22 @@ class VariableNode(ExpressionNode):
     def __init__(self, variable: Token):
         self.name = variable.value
 
-    def evaluate(self, assignment: Dict[str, bool]) -> bool:
-        return assignment[self.name]
+    def to_python(self):
+        return self.name
 
 
 class UnaryOperationNode(ExpressionNode):
     def __init__(self, operator: Token, operand: ExpressionNode):
         self.opd = operand
         self.opr = operator
-        self.unary_opr = {"NOT": lambda x: not x}
+        self.unary_opr = {"NOT": lambda x: f"(not {x})"}
 
-    def evaluate(self, assignment: Dict[str, bool]) -> bool:
-        opd_value = self.opd.evaluate(assignment)
+    def to_python(self):
+        opd_value = self.opd.to_python()
         if self.opr.type in self.unary_opr:
             return self.unary_opr[self.opr.type](opd_value)
+        else:
+            raise ValueError("Unknown unary operator")
 
 
 class BinaryOperationNode(ExpressionNode):
@@ -43,14 +44,16 @@ class BinaryOperationNode(ExpressionNode):
         self.right_opd = right_operand
 
         self.binary_opr = {
-            "AND": lambda x, y: x and y,
-            "OR": lambda x, y: x or y,
-            "IMP": lambda x, y: not x or y,
-            "EQU": lambda x, y: x == y,
+            "AND": lambda x, y: f"({x} and {y})",
+            "OR": lambda x, y: f"({x} or {y})",
+            "IMP": lambda x, y: f"(not {x} or {y})",
+            "EQU": lambda x, y: f"({x} == {y})",
         }
 
-    def evaluate(self, assignment: Dict[str, bool]) -> bool:
-        left_opd_value = self.left_opd.evaluate(assignment)
-        right_opd_value = self.right_opd.evaluate(assignment)
+    def to_python(self) -> bool:
+        left_opd_value = self.left_opd.to_python()
+        right_opd_value = self.right_opd.to_python()
         if self.opr.type in self.binary_opr:
             return self.binary_opr[self.opr.type](left_opd_value, right_opd_value)
+        else:
+            raise ValueError("Unknown binary operator")
