@@ -6,7 +6,7 @@ class HashInfo:
         self.key = key
         self.value = value
 
-    def __repr__(self):
+    def __str__(self):
         return f"{self.key} : {self.value}"
 
 
@@ -16,6 +16,9 @@ class Node:
         self.left = None
         self.right = None
         self.height = 1
+
+    def __str__(self):
+        return str(self.hash_info)
 
 
 class AVLTree:
@@ -32,6 +35,7 @@ class AVLTree:
         node.height = 1 + max(self._height(node.left), self._height(node.right))
 
     def _balance_factor(self, node):
+        """Calculate balance factor of a node (left height - right height)"""
         if not node:
             return 0
         return self._height(node.left) - self._height(node.right)
@@ -69,47 +73,60 @@ class AVLTree:
 
         return y
 
-    def insert(self, root, hash_info: HashInfo):
+    def insert(self, hash_info: HashInfo):
+        self.root = self._insert(self.root, hash_info)
+
+    def _insert(self, root, hash_info: HashInfo):
         if not root:
             return Node(hash_info)
         elif hash_info.key < root.hash_info.key:
-            root.left = self.insert(root.left, hash_info)
+            root.left = self._insert(root.left, hash_info)
         else:
-            root.right = self.insert(root.right, hash_info)
+            root.right = self._insert(root.right, hash_info)
 
         root.height = 1 + max(self._height(root.left), self._height(root.right))
 
         balance = self._balance_factor(root)
 
-        if balance > 1:
-            if hash_info.key < root.left.hash_info.key:
-                return self._rotate_right(root)
-            else:
-                root.left = self._rotate_left(root.left)
-                return self._rotate_right(root)
-        if balance < -1:
-            if hash_info.key > root.right.hash_info.key:
-                return self._rotate_left(root)
-            else:
-                root.right = self._rotate_right(root.right)
-                return self._rotate_left(root)
+        # 4. If unbalanced, perform rotations
+        # Left-Left Case
+        if balance > 1 and hash_info.key < root.left.hash_info.key:
+            return self._rotate_right(root)
+
+        # Right-Right Case
+        if balance < -1 and hash_info.key > root.right.hash_info.key:
+            return self._rotate_left(root)
+
+        # Left-Right Case
+        if balance > 1 and hash_info.key > root.left.hash_info.key:
+            root.left = self._rotate_left(root.left)
+            return self._rotate_right(root)
+
+        # Right-Left Case
+        if balance < -1 and hash_info.key < root.right.hash_info.key:
+            root.right = self._rotate_right(root.right)
+            return self._rotate_left(root)
 
         return root
 
     def _min_value_node(self, node):
+        """Find node with minimum key value in the tree rooted at node"""
         current = node
         while current and current.left:
             current = current.left
         return current
 
-    def delete(self, root, key):
+    def delete(self, key):
+        self.root = self._delete(self.root, key)
+
+    def _delete(self, root, key):
         if not root:
             return root
 
         if key < root.hash_info.key:
-            root.left = self.delete(root.left, key)
+            root.left = self._delete(root.left, key)
         elif key > root.hash_info.key:
-            root.right = self.delete(root.right, key)
+            root.right = self._delete(root.right, key)
         else:
             if not root.left:
                 temp = root.right
@@ -122,42 +139,38 @@ class AVLTree:
 
             temp = self._min_value_node(root.right)
             root.hash_info = HashInfo(temp.hash_info.key, temp.hash_info.value)
-            root.right = self.delete(root.right, temp.hash_info.key)
+            root.right = self._delete(root.right, temp.hash_info.key)
 
         root.height = 1 + max(self._height(root.left), self._height(root.right))
 
         balance = self._balance_factor(root)
 
-        if balance > 1:
-            if self._balance_factor(root.left) >= 0:
-                return self._rotate_right(root)
-            else:
-                root.left = self._rotate_left(root.left)
-                return self._rotate_right(root)
-        elif balance < -1:
-            if self._balance_factor(root.right) <= 0:
-                return self._rotate_left(root)
-            else:
-                root.right = self._rotate_right(root.right)
-                return self._rotate_left(root)
+        # 4. Rebalance if needed
+        # Left-Left Case
+        if balance > 1 and self._balance_factor(root.left) >= 0:
+            return self._rotate_right(root)
+
+        # Left-Right Case
+        if balance > 1 and self._balance_factor(root.left) < 0:
+            root.left = self._rotate_left(root.left)
+            return self._rotate_right(root)
+
+        # Right-Right Case
+        if balance < -1 and self._balance_factor(root.right) <= 0:
+            return self._rotate_left(root)
+
+        # Right-Left Case
+        if balance < -1 and self._balance_factor(root.right) > 0:
+            root.right = self._rotate_right(root.right)
+            return self._rotate_left(root)
 
         return root
 
+    def update(self, new_hash_info: HashInfo):
+        """Update the value of an existing key"""
+        node = self.search(new_hash_info.key)
+        if node is not None:
+            node.hash_info.value = new_hash_info.value
 
-def main():
-    avl = AVLTree()
-    keys = ["Война и мир", "Евгений Онегин", "Преступление и наказание", "Мертвые души", 
-            "Мастер и Маргарита", "Идиот", "Отцы и дети", "Герой нашего времени",
-            "Анна Каренина", "Капитанская дочка", "Ревизор", "Вишневый сад", "Обломов"]
-    values = ["Толстой", "Пушкин", "Достоевский", "Гоголь",
-              "Булгаков", "Достоевский", "Тургенев", "Лермонтов", 
-              "Толстой", "Пушкин", "Гоголь", "Чехов", "Гончаров"]
-
-    for key, value in zip(keys, values):
-        avl.root = avl.insert(avl.root, HashInfo(key, value))
-
-    print_tree(avl.root)
-
-
-if __name__ == "__main__":
-    main()
+    def print_tree(self):
+        print_tree(self.root)
